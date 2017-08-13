@@ -1,0 +1,52 @@
+P -> MF OFS
+MF -> main ( ) { SS }
+OFS -> OF OFS
+OFS -> ''
+OF -> function id ( AL ) { SS }
+AL -> B
+AL -> ''
+B -> var id Z
+Z -> , B
+Z -> ''
+SS -> S SS
+SS -> ''
+S -> AS ;
+S -> DS ;
+S -> IFS
+S -> LS
+
+AS -> id = E
+
+
+DS -> var C
+C -> id G
+G -> , C
+G-> ''
+
+IFS -> IFELSES
+
+IFP -> if ( E ) { SS }
+IFELSES -> IFP else { SS }
+LS -> while ( E ) { SS }
+
+
+
+
+E -> T E'
+E' -> + T E'
+E' -> - T E'
+E' -> ''
+
+T -> F T'
+T' -> * F T'
+T' -> / F T'
+T' -> ''
+F -> ( E )
+F -> id
+F -> True
+F -> False
+F -> number
+
+
+
+

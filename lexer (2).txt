@@ -1,0 +1,347 @@
+/////  					Compiler Construction Assignment		////////
+/*
+
+VIRAL MEHTA 2014A7PS865H
+YASH BANSAL 2014A7PS119H
+SHRINIL THAKKAR 2014A7PS860H
+
+*/
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<stdbool.h>
+#include<time.h>
+#include<string.h>
+#define STATES 100
+#define ALPHABET_SIZE 500
+#define no_of_operators 12
+#define no_of_separators 10
+#define no_of_brackets 6
+FILE *fp;
+int line_no=1;
+int mat[STATES][ALPHABET_SIZE];
+int token_id;
+char *token_type;
+char separators[20]=",;(){}[] 	";
+char operators[20]="+-*/<>&|%!^=";
+char brackets[20]="(){}[]";
+char buffer[1000];
+int idx=0;
+int final_states[STATES];
+int state=1;
+int max_keyword;
+char *keyword[1000];
+int get_token_id()
+{
+	if(strcmp("main",buffer)==0) return 1;
+	if(strcmp("(",buffer)==0) return 2;
+	if(strcmp(")",buffer)==0) return 3;
+	if(strcmp("{",buffer)==0) return 4;
+	if(strcmp("}",buffer)==0) return 5;
+	if(strcmp("function",buffer)==0) return 6;
+	if(strcmp("id",buffer)==0) return 7;
+	if(strcmp("var",buffer)==0) return 8;
+	if(strcmp(",",buffer)==0) return 9;
+	if(strcmp(";",buffer)==0) return 10;
+	if(strcmp("=",buffer)==0) return 11;
+	if(strcmp("if",buffer)==0) return 12;
+	if(strcmp("else",buffer)==0) return 13;
+	if(strcmp("while",buffer)==0) return 14;
+	if(strcmp("&&",buffer)==0) return 15;
+	if(strcmp("<",buffer)==0) return 16;
+	if(strcmp("<=",buffer)==0) return 17;
+	if(strcmp(">",buffer)==0) return 18;
+	if(strcmp(">=",buffer)==0) return 19;
+	if(strcmp("==",buffer)==0) return 20;
+	if(strcmp("+",buffer)==0) return 21;
+	if(strcmp("-",buffer)==0) return 22;
+	if(strcmp("*",buffer)==0) return 23;
+	if(strcmp("/",buffer)==0) return 24;
+	if(strcmp("true",buffer)==0) return 25;
+	if(strcmp("false",buffer)==0) return 26;
+	if(strcmp("`````````````````",buffer)==0) return 27;
+	if(strcmp("``````````````````",buffer)==0) return 28;
+	if(strcmp("$",buffer)==0) return 29;
+	return 30;
+	
+}
+void initialize()
+{
+	keyword[0]="for";
+	keyword[1]="function";
+	keyword[2]="int";
+	keyword[3]="main";
+	keyword[4]="return";
+	keyword[5]="if";
+	keyword[6]="else";
+	keyword[7]="break";
+	keyword[8]="continue";
+	keyword[9]="while";
+	keyword[10]="boolean";
+	keyword[11]="true";
+	keyword[12]="false";
+	keyword[13]="double";
+	keyword[14]="var";
+	keyword[15]="float";
+	keyword[16]="try";
+	keyword[17]="catch";
+	keyword[18]="throw";
+	keyword[19]="extends";
+	keyword[20]="export";
+	keyword[21]="static";
+	keyword[22]="public";
+	keyword[23]="private";
+	keyword[24]="protected";
+	keyword[25]="implements";
+	keyword[26]="import";
+	keyword[27]="final";
+	keyword[28]="console.log";
+	keyword[29]="null";
+	keyword[30]="const";
+	keyword[31]="void";
+	
+	
+	max_keyword=32;
+}
+
+void is_keyword()
+{
+	int i=0;
+	for(i=0;i<max_keyword;i++)
+		if(strcmp(keyword[i],buffer)==0){token_type="Keyword";return;}
+}
+
+void push_back(char ch)
+{
+	buffer[idx++]=ch;
+	buffer[idx]='\0';
+}
+void clear_buffer()
+{
+	idx=0;
+	buffer[0]='\0';
+}
+int is_digit(char ch)
+{
+	//[0-9]
+	return((int)(ch>='0'&&ch<='9'));
+}
+int is_letter(char ch)
+{
+	//[a-zA-Z_]
+	return((int)((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||(ch=='_')));
+}
+int is_alpha_numeric(char ch)
+{
+	//[a-zA-Z_0-9]
+	return(is_letter(ch)|is_digit(ch));
+}
+int is_operator(char ch)
+{
+	return((int)(ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='<'||ch=='>'||ch=='&'||ch=='|'||ch=='%'||ch=='!'||ch=='^'));
+}
+int is_separator(char ch)
+{
+	return((int)(ch==','||ch==';'||ch=='('||ch==')'||ch=='{'||ch=='}'||ch=='['||ch==']'||ch==' '||ch=='\t'||ch=='\n'));
+}
+int is_plus_minus(char ch)
+{
+	return((int)(ch=='+'||ch=='-'));
+}
+int is_white_space(char ch)
+{
+	return((int)(ch==' '||ch=='\t'||ch=='\n'));
+}
+int is_bracket(char ch)
+{
+	return((int)(ch=='('||ch==')'||ch=='{'||ch=='}'||ch=='['||ch==']'));
+}
+void get_token(int s)
+{
+	if(s==2) token_type="Integer";
+	if(s==4) token_type="Float";
+	if(s==5) token_type="Identifier";
+	if(s==6) token_type="Relational";
+	if(s==7) token_type="Bitwise";
+	if(s==8) token_type="Relational";
+	if(s==9) token_type="Relational";
+	if(s==10) token_type="Bitwise";
+	if(s==11) token_type="Relational";
+	if(s==12) token_type="Assignment ";
+	if(s==13) token_type="equal to Relational";
+	if(s==14) token_type="NOT Relational";
+	if(s==15) token_type="NOT equal to Relational";
+	if(s==17) token_type="String";
+	if(s==18) token_type="Multiplication Arithmetic Operator";
+	if(s==19) token_type="Division Arithmetic Operator";
+	if(s==20) token_type="Plus Arithmetic Operator";
+	if(s==21) token_type="Increment by 1 Arithmetic Operator";
+	if(s==22) token_type="Minus Arithmetic Operator";
+	if(s==23) token_type="Decrement by 1 Arithmetic Operator";
+	if(s==24) token_type="Bitwise";
+	if(s==25) token_type="Logical Operator";
+	if(s==26) token_type="Bitwise";
+	if(s==27) token_type="Logical Operator";
+	if(s==30) token_type="";
+	if(s==32) token_type="";
+	int i;
+	for(i=0;i<no_of_separators;i++) if(s==33+i) token_type="Separator";
+}
+void fill_mat()
+{
+	// State 0 is the error state
+	// State 1 is the start state
+	int i,j;
+	// Initialize all states as error state
+	for(i=0;i<STATES;i++) for(j=0;j<ALPHABET_SIZE;j++) mat[i][j]=0;
+	for(i=0;i<ALPHABET_SIZE;i++) if(is_separator((char)(i))==1) mat[1][i]=1;
+	// To recognize digits
+	for(i='0';i<='9';i++) mat[1][i]=2;
+	for(i='0';i<='9';i++) mat[2][i]=2;
+	mat[2]['.']=3;
+	for(i='0';i<='9';i++) mat[3][i]=4;
+	for(i='0';i<='9';i++) mat[4][i]=4;
+	for(i='0';i<='9';i++) mat[3][i]=4;
+	final_states[2]=1; final_states[4]=1;
+	// To recognize identifiers
+	for(i='a';i<='z';i++) mat[1][i]=5;
+	for(i='A';i<='Z';i++) mat[1][i]=5;
+	for(i='a';i<='z';i++) mat[5][i]=5;
+	for(i='A';i<='Z';i++) mat[5][i]=5;
+	for(i='0';i<='9';i++) mat[5][i]=5;
+	mat[5]['_']=5;
+	final_states[5]=1;
+	// To recognize strings
+	mat[1]['"']=16;
+	for(i=0;i<ALPHABET_SIZE;i++) mat[16][i]=16;
+	mat[16]['"']=17;
+	final_states[17]=1;
+	// To recognize <,<<,<=
+	mat[1]['<']=6; mat[6]['<']=7; mat[6]['=']=8;
+	final_states[6]=1; final_states[7]=1; final_states[8]=1;
+	// To recognize >,>>,>=
+	mat[1]['>']=9; mat[9]['>']=10; mat[9]['=']=11;
+	final_states[9]=1; final_states[10]=1; final_states[11]=1;
+	// To recognize =,==
+	mat[1]['=']=12; mat[12]['=']=13;
+	final_states[12]=1; final_states[13]=1;
+	// To recognize !,!=
+	mat[1]['!']=14; mat[14]['=']=15;
+	final_states[14]=1; final_states[15]=1;
+	// To recognize *
+	mat[1]['*']=18;
+	final_states[18]=1;
+	// To recognize /,//,/**/
+	for(i=0;i<ALPHABET_SIZE;i++) mat[31][i]=31,mat[28][i]=28,mat[29][i]=28; 
+	mat[1]['/']=19; mat[19]['*']=28; mat[28]['*']=29; mat[29]['*']=29; mat[29]['/']=30; mat[19]['/']=31; mat[31]['\n']=32;
+	final_states[19]=1; final_states[30]=1; final_states[32]=1;
+	// To recognize +,++
+	mat[1]['+']=20; mat[20]['+']=21;
+	final_states[20]=1; final_states[21]=1;
+	// To recognize -,--
+	mat[1]['-']=22; mat[22]['-']=23;
+	final_states[22]=1; final_states[23]=1;
+	// To recognize &,&&
+	mat[1]['&']=24; mat[24]['&']=25;
+	final_states[24]=1; final_states[25]=1;
+	// To recognize |,||
+	mat[1]['|']=26; mat[26]['|']=27;
+	final_states[26]=1; final_states[27]=1;
+	// To recognize %
+	mat[1]['%']=33;
+	final_states[33]=1;
+	// To recognize separators
+	for(i=0;i<no_of_separators;i++) mat[1][separators[i]]=33+i,final_states[33+i]=1;
+	// From final states, undefined transitions go to state 1
+	// From non-final states, undefined transitions go to state 0 (ERROR state)
+	for(i=0;i<STATES;i++)
+	{
+		for(j=0;j<ALPHABET_SIZE;j++)
+		{
+			if(mat[i][j]==0&&final_states[i]==1) mat[i][j]=1;
+		}
+	}
+}
+int send_next_token(char ch)
+{
+	int ret=30;
+	int x=ch;
+	if(x<0) return ret;
+	//printf("current state = %d, next_char = %c, next_state = %d, ascii value of next_char = %d\n",state,ch,mat[state][ch],ch);
+	if(mat[state][ch]==1) 
+	{
+		get_token(state);
+		if(strcmp(token_type,"Identifier")==0)
+		{
+			is_keyword();
+			//printf("1.token_type = %s\n",token_type);
+		}
+		//printf("2.token_type = %s\n",token_type);
+		if(buffer[0]!='\0'&&strlen(token_type)>0) 
+		{
+			printf("literal = %s, token = %s, line_no = %d \n",buffer,token_type,line_no);
+			//printf("------------->>> %s\n",token_type);
+			if(strcmp(token_type,"Identifier")==0) ret=7; // 7 is the token_id of Identifier.
+			else ret=get_token_id();
+			//printf("3.token_type = %s\n",token_type);
+		}
+		clear_buffer();
+		state=1;
+		//printf("4.token_type = %s\n",token_type);
+	}
+	if(is_white_space(ch)==0||(is_white_space(ch)==1&&state==16)) push_back(ch);
+	if(ch=='\n') line_no++;
+	//printf("5.token_type = %s\n",token_type);
+	state=mat[state][ch];
+	if(state==30||state==32) clear_buffer();
+	//printf("6.token_type = %s\n",token_type);
+	if(state==1)
+	{
+		if(buffer[0]!='\0') printf("literal = %s, line_no = %d \n",buffer,line_no);
+		clear_buffer();
+	}
+	//printf("7.token_type = %s\n",token_type);
+	if(state==0)
+	{
+		printf("ERROR on line_no = %d\n",line_no);
+		state=1;
+		clear_buffer();
+	}
+	//printf("8.token_type = %s\n",token_type);
+	//printf("token_type = %s\n",token_type);
+	
+	return ret;
+}
+int get_next_token()
+{
+	//printf("Hi\n");
+	char current_char = 10;
+	int ret=30;
+	while(ret==30&&current_char!=EOF)
+	{
+		current_char = fgetc(fp);
+		
+		//printf("current_char = %c \n",current_char);
+		ret=send_next_token(current_char);
+	}
+	if(current_char==EOF) return 29;
+	return ret;
+}
+void initialize_lexer()
+{
+	initialize();
+	fill_mat();
+	if((fp= fopen("compiler_input.txt","r"))<0)
+	{
+		printf("Error opening file\n");
+	}
+	/*send_next_char(';');
+	if(final_states[state]==0)
+	{
+		printf("ERROR on line_no = %d\n",line_no);
+		state=1;
+		clear_buffer();
+	}
+	printf("no. of lines :: %d\n",line_no);
+	fclose(fp);*/
+}
